@@ -14,6 +14,9 @@ echo  "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg]
 
 sudo apt-get update && sudo apt-get install docker-ce docker-ce-cli containerd.io -y
 
+usermod -aG docker vagrant
+
+docker version
 
 # ##################################################################################################################
 # INSTALL DOCKER-COMPOSE - https://docs.docker.com/compose/install/
@@ -22,24 +25,22 @@ sudo curl -L "https://github.com/docker/compose/releases/download/1.29.1/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-usermod -aG docker vagrant
-
+docker-compose version
 
 # ##################################################################################################################
-# INSTALL NGINX
+# INSTALL NGINX AND CONFIGURE SSL
 # ##################################################################################################################
-sudo apt install nginx openssl -y
+apt-get -y install nginx
 
-## INSTALL SSL
-# CREATE DIRECTORY
+rm /etc/nginx/sites-enabled/default
+rm /etc/nginx/sites-available/default
 
-sudo mkdir /etc/nginx/certificate 
-sudo cd /etc/nginx/certificate
+# OpenSSL 1.1.1
+# https://docs.oracle.com/cd/E24191_01/common/tutorials/authz_cert_attributes.html
+openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
+  -keyout server.key -out server.crt -subj '/C=BR/L=Foz do Iguacu/O=Uniamerica/OU=Eng/CN=example' \
+  -addext 'subjectAltName=DNS:example.com,DNS:www.example.com,IP:192.168.10.50,IP:127.0.0.1'
 
-# openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out nginx-certificate.crt -keyout nginx.key
+openssl x509 -noout -text -in server.crt
 
-# include in server
-# listen 443 ssl default_server;
-# listen [::]:443 ssl default_server;
-# ssl_certificate /etc/nginx/certificate/nginx-certificate.crt;
-# ssl_certificate_key /etc/nginx/certificate/nginx.key;
+mv server.* /etc/nginx/conf.d/
